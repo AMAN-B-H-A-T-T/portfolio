@@ -10,7 +10,6 @@ export async function GET(req: NextRequest) {
   try {
     // 1. Check Redis Cache
     const cachedData = await redis.get(CACHE_KEY);
-    console.log("before cache");
     if (cachedData) {
       console.log("[GITHUB_API] Serving from cache");
       return NextResponse.json(cachedData);
@@ -18,7 +17,6 @@ export async function GET(req: NextRequest) {
 
     // 2. Fetch from GitHub API
     console.log("[GITHUB_API] Cache miss, fetching from GitHub");
-    console.log(`https://api.github.com/users/${GITHUB_USERNAME}`);
     const response = await fetch(
       `https://api.github.com/users/${GITHUB_USERNAME}`,
       {

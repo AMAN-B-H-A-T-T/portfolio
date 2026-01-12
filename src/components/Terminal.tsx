@@ -120,9 +120,27 @@ export const Terminal = () => {
   const [memUsage, setMemUsage] = useState<number>(400);
   const [hasMounted, setHasMounted] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleFocusChange = () => {
+      setIsFocused(document.activeElement === inputRef.current);
+    };
+
+    window.addEventListener("focusin", handleFocusChange);
+    window.addEventListener("focusout", handleFocusChange);
+
+    // Initial check
+    handleFocusChange();
+
+    return () => {
+      window.removeEventListener("focusin", handleFocusChange);
+      window.removeEventListener("focusout", handleFocusChange);
+    };
+  }, [isTyping]); // Re-run when input might be remounted
 
   useEffect(() => {
     setHasMounted(true);
@@ -594,14 +612,16 @@ export const Terminal = () => {
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                 />
-                <motion.div
-                  animate={{ opacity: [1, 0] }}
-                  transition={{ duration: 0.8, repeat: Infinity }}
-                  className="absolute top-0.5 w-2 sm:w-2.5 h-5 sm:h-6 bg-primary-neon shadow-[0_0_15px_rgba(162,255,0,0.8)]"
-                  style={{
-                    left: `calc(${input.length}ch + 2px)`,
-                  }}
-                />
+                {isFocused && (
+                  <motion.div
+                    animate={{ opacity: [1, 0] }}
+                    transition={{ duration: 0.8, repeat: Infinity }}
+                    className="absolute top-0.5 w-2 sm:w-2.5 h-5 sm:h-6 bg-primary-neon shadow-[0_0_15px_rgba(162,255,0,0.8)]"
+                    style={{
+                      left: `calc(${input.length}ch + 2px)`,
+                    }}
+                  />
+                )}
               </div>
             </motion.div>
           )}
