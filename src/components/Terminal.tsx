@@ -278,7 +278,7 @@ export const Terminal = () => {
         trimmedCmd === "02" ||
         trimmedCmd === "linkedin"
       ) {
-        redirectUrl = portfolioData.contact.linkedin;
+        redirectUrl = portfolioData.contact.linkedin.url;
         outputText =
           "[ PROTOCOL_SELECTED ]: LINKEDIN\nRedirecting to professional network...";
       } else if (
@@ -1187,7 +1187,7 @@ const Contact = () => (
     </div>
     <div className="grid grid-cols-1 gap-2">
       <a
-        href={portfolioData.contact.linkedin}
+        href={portfolioData.contact.linkedin.url}
         target="_blank"
         className="flex items-center justify-between p-3 border border-white/5 hover:border-primary-neon/30 hover:bg-primary-neon/5 transition-all group"
       >
@@ -1198,7 +1198,7 @@ const Contact = () => (
           <div className="text-sm text-white/80">LINKEDIN_CONNECT</div>
         </div>
         <div className="text-[10px] text-white/20 uppercase">
-          {portfolioData.contact.linkedin.split("/in/").pop()}
+          {portfolioData.contact.linkedin.profile_name}
         </div>
       </a>
       <a

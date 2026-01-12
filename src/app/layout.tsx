@@ -9,9 +9,12 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AmanOS | Next Gen Developer Portfolio",
+  title: "Aman | Full Stack Developer Portfolio",
   description:
     "Experience the future of development with AmanOS - A premium interactive terminal portfolio.",
+  icons: {
+    shortcut: "/images/logo2.ico",
+  },
 };
 
 import { SmoothScroll } from "@/components/SmoothScroll";

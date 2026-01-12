@@ -117,7 +117,10 @@ quality, and a user-first soul."
   ],
   contact: {
     email: "amansevak123@gmail.com",
-    linkedin: "https://www.linkedin.com/in/aman-bhatt-b82756262/",
+    linkedin: {
+      url: "https://www.linkedin.com/in/aman-bhatt-b82756262/",
+      profile_name: "Aman Bhatt",
+    },
     github: "https://github.com/AMAN-B-H-A-T-T",
   },
   hire: {
