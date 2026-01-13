@@ -49,11 +49,41 @@ body {
     @apply text-primary-neon drop-shadow-[0_0_8px_rgba(162,255,0,0.4)];
   }
 
+  /* CSS Containment for CLS optimization */
+  .contain-strict {
+    contain: strict;
+  }
+
+  .contain-layout {
+    contain: layout;
+  }
+
+  .contain-paint {
+    contain: paint;
+  }
+
+  .contain-content {
+    contain: content;
+  }
+
+  /* GPU acceleration for animated elements */
+  .gpu-accelerate {
+    transform: translateZ(0);
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+  }
+
+  /* Stable layout for number displays to prevent shifts */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
   /* CRT Screen Effect */
   .crt-container {
     position: relative;
     overflow: hidden;
     background: #121010;
+    contain: layout style; /* Prevent CLS from internal changes */
   }
 
   .crt-container::before {

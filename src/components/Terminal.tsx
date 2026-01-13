@@ -108,8 +108,24 @@ const Typewriter = ({
   );
 };
 
+// Pre-rendered initial content for faster LCP - Neofetch is shown immediately
+const getInitialHistory = () => [
+  {
+    kind: "input",
+    content: "neofetch",
+    timestamp: "--:--:--",
+  },
+  {
+    kind: "output",
+    type: "component",
+    content: null, // Will be replaced with <Neofetch /> in render
+    isNeofetch: true, // Flag to identify this entry
+    timestamp: "--:--:--",
+  },
+];
+
 export const Terminal = () => {
-  const [history, setHistory] = useState<any[]>([]);
+  const [history, setHistory] = useState<any[]>(getInitialHistory());
   const [input, setInput] = useState("");
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -121,9 +137,16 @@ export const Terminal = () => {
   const [hasMounted, setHasMounted] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const isTypingRef = useRef(false);
+  const isExecutingRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Sync ref with state for immediate synchronous checks
+  useEffect(() => {
+    isTypingRef.current = isTyping;
+  }, [isTyping]);
 
   useEffect(() => {
     const handleFocusChange = () => {
@@ -173,14 +196,8 @@ export const Terminal = () => {
     return () => clearTimeout(scrollTask);
   }, [history]);
 
-  const initialized = useRef(false);
-
-  useEffect(() => {
-    if (!initialized.current) {
-      handleCommand("neofetch");
-      initialized.current = true;
-    }
-  }, []);
+  // Neofetch is now pre-rendered in initial state - no need to call handleCommand
+  // This dramatically improves LCP by showing content immediately
 
   const commands = [
     "help",
@@ -214,13 +231,18 @@ export const Terminal = () => {
   }, [input]);
 
   const handleCommand = (cmd: string) => {
+    if (isTypingRef.current || isExecutingRef.current) return;
+
     const trimmedCmd = cmd.trim().toLowerCase();
     let response: CommandResponse | null = null;
     const timestamp = formatTime(new Date());
     setGhostSuggestion("");
 
+    isExecutingRef.current = true;
+
     if (trimmedCmd === "clear") {
       setHistory([]);
+      isExecutingRef.current = false;
       return;
     }
 
@@ -244,8 +266,10 @@ export const Terminal = () => {
         ]);
         if (inputRef.current) inputRef.current.value = "";
         setInput("");
+        isExecutingRef.current = false;
         return;
       } else {
+        setIsTyping(true);
         setHistory((prev) => [
           ...prev,
           { kind: "input", content: cmd, timestamp, isInteractive: true },
@@ -293,6 +317,7 @@ export const Terminal = () => {
         outputText = "[ ERROR ]: INVALID_SELECTION\nReturning to root shell.";
       }
 
+      setIsTyping(true);
       setHistory((prev) => [
         ...prev,
         { kind: "input", content: cmd, timestamp, isInteractive: true },
@@ -414,7 +439,11 @@ export const Terminal = () => {
     if (response) {
       if (response.type === "text") {
         setIsTyping(true);
+      } else {
+        isExecutingRef.current = false;
       }
+    } else {
+      isExecutingRef.current = false;
     }
 
     setHistory(
@@ -461,8 +490,9 @@ export const Terminal = () => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
       className="w-full max-w-7xl h-[100dvh] sm:h-[90vh] md:h-[700px] rounded-none sm:rounded-xl overflow-hidden shadow-none sm:shadow-[0_0_100px_rgba(0,0,0,0.8)] flex flex-col relative z-20 border-none sm:border border-white/10 bg-[#0a0a0a] crt-container"
     >
       <div className="absolute inset-0 pointer-events-none crt-curve z-30" />
@@ -492,7 +522,11 @@ export const Terminal = () => {
               <button
                 key={cmd}
                 onClick={() => handleCommand(cmd)}
-                className="text-[10px] text-white/30 hover:text-primary-neon transition-colors uppercase whitespace-nowrap"
+                disabled={isTyping}
+                className={cn(
+                  "text-[10px] text-white/30 hover:text-primary-neon transition-colors uppercase whitespace-nowrap",
+                  isTyping && "opacity-50 cursor-not-allowed"
+                )}
               >
                 {cmd}
               </button>
@@ -541,8 +575,9 @@ export const Terminal = () => {
               </div>
             ) : (
               <motion.div
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.1 }}
                 className="flex items-start gap-4"
               >
                 <span className="text-xs text-transparent select-none hidden sm:inline">
@@ -555,10 +590,15 @@ export const Terminal = () => {
                       delay={5}
                       onComplete={
                         i === history.length - 1
-                          ? () => setIsTyping(false)
+                          ? () => {
+                              setIsTyping(false);
+                              isExecutingRef.current = false;
+                            }
                           : undefined
                       }
                     />
+                  ) : item.isNeofetch ? (
+                    <Neofetch />
                   ) : (
                     item.content
                   )}
@@ -568,95 +608,103 @@ export const Terminal = () => {
           </div>
         ))}
 
-        {/* Current Input */}
-        <AnimatePresence>
-          {!isTyping && (
-            <motion.div
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -5 }}
-              className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 group relative pb-10 mt-2 border-l border-primary-neon/10 pl-4 ml-1"
-            >
-              <span className="text-[11px] text-primary-neon/20 hidden sm:inline tabular-nums shrink-0">
-                [{formatTime(time)}]
-              </span>
-              <div className="flex items-center gap-2 shrink-0">
-                {!awaitingResponse ? (
-                  <>
-                    <span className="text-secondary-accent font-bold text-sm sm:text-base md:text-lg opacity-80">
-                      aman@portfolio
+        {/* Current Input - Using opacity-only animation to prevent CLS */}
+        <div style={{ minHeight: "60px" }}>
+          <AnimatePresence mode="wait">
+            {!isTyping && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 group relative pb-10 mt-2 border-l border-primary-neon/10 pl-4 ml-1"
+              >
+                <span className="text-[11px] text-primary-neon/20 hidden sm:inline tabular-nums shrink-0">
+                  [{formatTime(time)}]
+                </span>
+                <div className="flex items-center gap-2 shrink-0">
+                  {!awaitingResponse ? (
+                    <>
+                      <span className="text-secondary-accent font-bold text-sm sm:text-base md:text-lg opacity-80">
+                        aman@portfolio
+                      </span>
+                      <span className="text-primary-neon font-bold text-sm sm:text-base md:text-lg -ml-1">
+                        :~$
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-primary-neon font-bold text-sm sm:text-base md:text-lg opacity-50">
+                      [confirm] {">"}
                     </span>
-                    <span className="text-primary-neon font-bold text-sm sm:text-base md:text-lg -ml-1">
-                      :~$
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-primary-neon font-bold text-sm sm:text-base md:text-lg opacity-50">
-                    [confirm] {">"}
-                  </span>
-                )}
-              </div>
-              <div className="relative flex-1 min-w-0">
-                {/* Ghost Suggestion Layer */}
-                <div className="absolute inset-0 pointer-events-none text-terminal-text whitespace-pre opacity-20 text-sm sm:text-base md:text-lg font-medium overflow-hidden">
-                  <span className="invisible">{input}</span>
-                  {ghostSuggestion}
+                  )}
                 </div>
+                <div className="relative flex-1 min-w-0">
+                  {/* Ghost Suggestion Layer */}
+                  <div className="absolute inset-0 pointer-events-none text-terminal-text whitespace-pre opacity-20 text-sm sm:text-base md:text-lg font-medium overflow-hidden">
+                    <span className="invisible">{input}</span>
+                    {ghostSuggestion}
+                  </div>
 
-                <input
-                  ref={inputRef}
-                  type="text"
-                  autoFocus
-                  className="bg-transparent border-none outline-none w-full text-terminal-text font-mono relative z-10 text-sm sm:text-base md:text-lg font-medium caret-transparent"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                />
-                {isFocused && (
-                  <motion.div
-                    animate={{ opacity: [1, 0] }}
-                    transition={{ duration: 0.8, repeat: Infinity }}
-                    className="absolute top-0.5 w-2 sm:w-2.5 h-5 sm:h-6 bg-primary-neon shadow-[0_0_15px_rgba(162,255,0,0.8)]"
-                    style={{
-                      left: `calc(${input.length}ch + 2px)`,
-                    }}
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    autoFocus
+                    className="bg-transparent border-none outline-none w-full text-terminal-text font-mono relative z-10 text-sm sm:text-base md:text-lg font-medium caret-transparent"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
                   />
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                  {isFocused && (
+                    <motion.div
+                      animate={{ opacity: [1, 0] }}
+                      transition={{ duration: 0.8, repeat: Infinity }}
+                      className="absolute top-0.5 w-2 sm:w-2.5 h-5 sm:h-6 bg-primary-neon shadow-[0_0_15px_rgba(162,255,0,0.8)]"
+                      style={{
+                        left: `calc(${input.length}ch + 2px)`,
+                      }}
+                    />
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
         <div ref={bottomRef} className="pb-10" />
       </div>
 
-      {/* Terminal Footer Status Bar */}
-      <div className="px-4 py-1 bg-zinc-900/90 border-t border-white/5 flex items-center justify-between text-[9px] font-mono text-white/30 relative z-40">
+      {/* Terminal Footer Status Bar - Fixed layout to prevent CLS */}
+      <div className="px-4 py-1 bg-zinc-900/90 border-t border-white/5 flex items-center justify-between text-[9px] font-mono text-white/30 relative z-40 min-h-[24px]">
         <div className="flex gap-4">
           <div className="flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
             <span>SYSTEM_READY</span>
           </div>
-          {hasMounted && (
-            <>
-              <div className="flex items-center gap-1">
-                <span>CPU:</span>
-                <span className="text-primary-neon/60">{cpuUsage}%</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span>MEM:</span>
-                <span className="text-secondary-accent/60">
-                  {memUsage}MB / 1024MB
-                </span>
-              </div>
-            </>
-          )}
+          {/* Always render with fixed width to prevent CLS */}
+          <div className="flex items-center gap-1" style={{ minWidth: "60px" }}>
+            <span>CPU:</span>
+            <span className="text-primary-neon/60 tabular-nums">
+              {cpuUsage}%
+            </span>
+          </div>
+          <div
+            className="flex items-center gap-1"
+            style={{ minWidth: "120px" }}
+          >
+            <span>MEM:</span>
+            <span className="text-secondary-accent/60 tabular-nums">
+              {memUsage}MB / 1024MB
+            </span>
+          </div>
         </div>
         <div className="flex gap-4 items-center">
           <span className="hover:text-primary-neon cursor-help">HELP [?]</span>
           <span className="text-white/10">|</span>
           <span>SECURE_SHELL_AES_256</span>
           <span className="text-white/10">|</span>
-          <span className="text-white/50">
+          <span
+            className="text-white/50 tabular-nums"
+            style={{ minWidth: "80px" }}
+          >
             {hasMounted ? new Date().toLocaleDateString() : "--/--/----"}
           </span>
         </div>
@@ -671,8 +719,9 @@ const Neofetch = () => (
   <div className="flex flex-col lg:flex-row gap-6 md:gap-10 py-4 md:py-6 items-center lg:items-start overflow-hidden">
     {/* ID Card inspired by the image */}
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
       className="w-full max-w-[280px] lg:w-72 aspect-[3/4] glass border border-primary-neon/20 rounded-lg overflow-hidden flex flex-col relative group shrink-0"
     >
       <div className="h-1.5 md:h-2 bg-primary-neon/20 w-full" />
@@ -683,7 +732,11 @@ const Neofetch = () => (
             <img
               src="/images/my_self.jfif"
               alt="Aman Bhatt"
+              width={96}
+              height={96}
               className="w-full h-full object-cover"
+              loading="eager"
+              decoding="async"
             />
           </div>
         </div>

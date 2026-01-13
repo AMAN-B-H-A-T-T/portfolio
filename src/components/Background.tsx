@@ -1,53 +1,73 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+
+// Pre-calculate a reasonable default for SSR to prevent CLS
+const DEFAULT_COLUMNS = 80; // Reasonable default for most screens
 
 const BinaryRain = () => {
-  const [columns, setColumns] = useState<number>(0);
+  const [columns, setColumns] = useState<number>(DEFAULT_COLUMNS);
+  const [isClient, setIsClient] = useState(false);
+
+  // Generate stable random values using index as seed
+  const columnData = useMemo(() => {
+    return [...Array(columns)].map((_, i) => ({
+      key: i,
+      delay: (i * 0.0625) % 5, // Deterministic delay based on index
+      left: (i * 1.25) % 100, // Deterministic position
+    }));
+  }, [columns]);
 
   useEffect(() => {
-    setColumns(Math.floor(window.innerWidth / 20));
-    const handleResize = () => setColumns(Math.floor(window.innerWidth / 20));
+    setIsClient(true);
+    const calculateColumns = () => Math.floor(window.innerWidth / 20);
+    setColumns(calculateColumns());
+
+    const handleResize = () => setColumns(calculateColumns());
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-[0.03]">
-      {columns > 0 &&
-        [...Array(columns)].map((_, i) => (
-          <BinaryColumn key={i} delay={Math.random() * 5} />
-        ))}
+    <div
+      className="absolute inset-0 overflow-hidden pointer-events-none opacity-[0.03]"
+      style={{ contain: "strict" }} // CSS containment to isolate layout
+    >
+      {columnData.map((col) => (
+        <BinaryColumn key={col.key} delay={col.delay} left={col.left} />
+      ))}
     </div>
   );
 };
 
-const BinaryColumn = ({ delay }: { delay: number }) => {
-  const [text, setText] = useState("");
-
-  useEffect(() => {
+const BinaryColumn = ({ delay, left }: { delay: number; left: number }) => {
+  // Pre-generate text to avoid hydration mismatch
+  const text = useMemo(() => {
     const chars = "01";
-    const length = 20 + Math.floor(Math.random() * 30);
-    let currentText = "";
+    const length = 30; // Fixed length to prevent layout shifts
+    let result = "";
     for (let i = 0; i < length; i++) {
-      currentText += chars.charAt(Math.floor(Math.random() * chars.length));
+      result += chars.charAt((i + Math.floor(left)) % 2);
     }
-    setText(currentText);
-  }, []);
+    return result;
+  }, [left]);
 
   return (
     <motion.div
       initial={{ y: -500 }}
       animate={{ y: 1000 }}
       transition={{
-        duration: 10 + Math.random() * 10,
+        duration: 15,
         repeat: Infinity,
         ease: "linear",
         delay,
       }}
-      className="absolute text-[10px] font-mono whitespace-pre leading-none"
-      style={{ left: `${Math.random() * 100}%` }}
+      className="absolute text-[10px] font-mono whitespace-pre leading-none will-change-transform"
+      style={{
+        left: `${left}%`,
+        contain: "layout style", // Prevent layout recalculations
+      }}
     >
       {text.split("").map((char, i) => (
         <div key={i}>{char}</div>
@@ -58,37 +78,42 @@ const BinaryColumn = ({ delay }: { delay: number }) => {
 
 export const Background = () => {
   return (
-    <div className="fixed inset-0 z-0 bg-[#05070a] overflow-hidden">
+    <div
+      className="fixed inset-0 z-0 bg-[#05070a] overflow-hidden"
+      style={{ contain: "strict" }} // Isolate background from affecting layout
+    >
       <BinaryRain />
 
-      {/* Animated gradient orbs - more subtle */}
+      {/* Animated gradient orbs - using will-change and contain for performance */}
       <motion.div
         animate={{
-          scale: [1, 1.1, 1],
           opacity: [0.15, 0.25, 0.15],
-          x: [0, 50, 0],
-          y: [0, 20, 0],
         }}
         transition={{
           duration: 25,
           repeat: Infinity,
           ease: "linear",
         }}
-        className="absolute -top-1/4 -left-1/4 w-[800px] h-[800px] bg-[#00ffe1] blur-[150px] rounded-full"
+        className="absolute -top-1/4 -left-1/4 w-[800px] h-[800px] bg-[#00ffe1] blur-[150px] rounded-full will-change-opacity"
+        style={{
+          contain: "strict",
+          transform: "translateZ(0)", // Force GPU layer
+        }}
       />
       <motion.div
         animate={{
-          scale: [1.1, 1, 1.1],
           opacity: [0.1, 0.2, 0.1],
-          x: [0, -50, 0],
-          y: [0, -20, 0],
         }}
         transition={{
           duration: 20,
           repeat: Infinity,
           ease: "linear",
         }}
-        className="absolute -bottom-1/4 -right-1/4 w-[700px] h-[700px] bg-[#8b5cf6] blur-[130px] rounded-full"
+        className="absolute -bottom-1/4 -right-1/4 w-[700px] h-[700px] bg-[#8b5cf6] blur-[130px] rounded-full will-change-opacity"
+        style={{
+          contain: "strict",
+          transform: "translateZ(0)", // Force GPU layer
+        }}
       />
 
       <div className="noise" />

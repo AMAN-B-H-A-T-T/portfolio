@@ -3,24 +3,20 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
+// Full boot experience - premium aesthetic with visible animation
 const BOOT_LOGS = [
   "[    0.000000] Linux version 4.14.0-core (aman@amanOS)",
-  "[    0.000000] Command line: BOOT_IMAGE=/vmlinuz-linux root=PARTUUID=... quiet",
   "[    0.042134] x86/fpu: Supporting XSAVE feature set: 0x001",
-  "[    0.154231] Freeing SMP alternatives memory: 24K",
-  "[    0.287612] smpboot: CPU0: Intel(R) Core(TM) i9-12900K CPU @ 3.20GHz",
-  "[    0.432198] performance_monitor: IPS: enabled",
-  "[    0.654321] ACPI: Core revision 20170831",
-  "[    0.876543] pci 0000:00:00.0: [8086:4610] rev 02",
-  "[    1.123456] vgaarb: bridge control transition default vga device",
-  "[    1.345678] SCSI subsystem initialized",
-  "[    1.567890] libata version 3.00 loaded.",
-  "[    1.789012] usbcore: registered new interface driver usbfs",
-  "[    2.012345] Initializing AmanOS Shell...",
-  "[    2.234567] Loading Neural Engine Assets...",
-  "[    2.456789] Establishing Encrypted Tunnel...",
-  "[    2.678901] Checking System Integrity...",
-  "[    2.890123] SYSTEM_READY: Initiating UI_TERMINAL",
+  "[    0.154231] smpboot: CPU0: Intel(R) Core(TM) i9-12900K @ 3.20GHz",
+  "[    0.287612] ACPI: Core revision 20170831",
+  "[    0.432198] SCSI subsystem initialized",
+  "[    0.567890] Initializing AmanOS Shell...",
+  "[    0.712345] Loading Neural Engine Assets...",
+  "[    0.823456] Mounting Virtual Filesystem...",
+  "[    0.901234] Establishing Encrypted Tunnel...",
+  "[    0.956789] Checking System Integrity...",
+  "[    0.989012] Loading User Preferences...",
+  "[    1.000000] SYSTEM_READY: Initiating UI_TERMINAL",
 ];
 
 export const BootScreen = ({ onComplete }: { onComplete: () => void }) => {
@@ -29,6 +25,7 @@ export const BootScreen = ({ onComplete }: { onComplete: () => void }) => {
 
   useEffect(() => {
     let currentLog = 0;
+    // 120ms per log × 12 logs = 1440ms + 600ms delay = ~2 seconds total
     const logInterval = setInterval(() => {
       if (currentLog < BOOT_LOGS.length) {
         setLogs((prev) => [...prev, BOOT_LOGS[currentLog]]);
@@ -36,7 +33,7 @@ export const BootScreen = ({ onComplete }: { onComplete: () => void }) => {
         setProgress((currentLog / BOOT_LOGS.length) * 100);
       } else {
         clearInterval(logInterval);
-        setTimeout(onComplete, 800);
+        setTimeout(onComplete, 600);
       }
     }, 120);
 

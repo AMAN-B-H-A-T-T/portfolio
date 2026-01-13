@@ -6,6 +6,9 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
+  display: "swap", // Prevent FOIT - show fallback immediately
+  preload: true,
+  fallback: ["Monaco", "Consolas", "monospace"],
 });
 
 export const metadata: Metadata = {
