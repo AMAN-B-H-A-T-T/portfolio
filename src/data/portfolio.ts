@@ -26,6 +26,20 @@ quality, and a user-first soul."
     entries: [
       {
         id: "01",
+        role: "Associate Software Engineer",
+        company: "Speed - Bitcoin wallet",
+        period: "JAN 2025 - PRESENT // ONSITE",
+        points: [
+          "Engineered key features and maintained production-grade full-stack applications using Node.js, React.js, and TypeScript.",
+          "Designed and implemented RESTful APIs for high-traffic wallet and backend services.",
+          "Integrated Kafka for event-driven communication between microservices, improving system decoupling and reliability.",
+          "Designed and optimized MySQL and MongoDB schemas, implementing indexing and query tuning to improve performance.",
+          "Implemented automated SIP (Systematic Investment Plan) feature enabling users to schedule recurring purchases of Bitcoin and gold (XAUT) on daily, weekly, or monthly intervals with customizable USD amounts.",
+          "Debugged and resolved production issues, improving system stability and response times.",
+        ],
+      },
+      {
+        id: "02",
         role: "Technical Trainer",
         company: "Evansh Services",
         period: "MAR 2022 - AUG 2022 // ONSITE",
@@ -85,7 +99,7 @@ quality, and a user-first soul."
       stack: "React.js | Django | Geolocation",
       status: "PRODUCTION",
       metrics: "50% Accuracy Increase",
-      url: "#",
+      url: "https://dev.smartroll.live",
     },
     {
       id: "PRJ-002",
@@ -107,6 +121,14 @@ quality, and a user-first soul."
     },
     {
       id: "PRJ-004",
+      title: "DBScan - Database Schema Scanning & ER Diagram Platform",
+      desc: "Built interactive ER diagram renderer visualizing database schemas with tables, relationships, and constraints (PK,FK, UNIQUE, CHECK).",
+      stack: "React | Node | Redis | Konva | Tailwind CSS",
+      status: "LIVE",
+      url: "https://dbscan.a-mn.dev",
+    },
+    {
+      id: "PRJ-005",
       title: "Blockchain Ledger",
       desc: "Secure and scalable P2P distributed ledger application.",
       stack: "Node.js | Redis | P2P",
