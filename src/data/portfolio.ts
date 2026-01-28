@@ -125,6 +125,7 @@ quality, and a user-first soul."
       desc: "Built interactive ER diagram renderer visualizing database schemas with tables, relationships, and constraints (PK,FK, UNIQUE, CHECK).",
       stack: "React | Node | Redis | Konva | Tailwind CSS",
       status: "LIVE",
+      metrics: "Schema Visualization",
       url: "https://dbscan.a-mn.dev",
     },
     {
